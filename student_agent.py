@@ -131,9 +131,9 @@ def get_action(obs):
     # print(f"stations: {obs[2],obs[3]}, {obs[4],obs[5]}, {obs[6],obs[7]}, {obs[8],obs[9]}")
     # print(f"obstacle: {obs[10], obs[11], obs[12], obs[13]}")
     # print(f"Passenger and Destination: {obs[14], obs[15]}")
-    print(obs)
-    print(state, action)
-    time.sleep(0.5)
+    # print(obs)
+    # print(state, action)
+    # time.sleep(0.5)
 
     return action
 
