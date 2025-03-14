@@ -54,10 +54,14 @@ def get_state(pre_obs, obs, stations, passenger_loc, destination_loc, get_passen
 
     # If the passenger's location is unknown but visible, determine its position relative to the taxi
     elif passenger_look and passenger_loc == None:
+        count_view = 0
         for pos in possible_positions:
             if pos in stations:
+                count_view += 1
                 passenger_loc = pos # absolute passenger location
                 passenger_loc = (passenger_loc[0] - taxi_row, passenger_loc[1] - taxi_col)
+        if count_view > 1:
+            passenger_loc = None
     
     # If the passenger's location is known, update it based on the taxi's movement
     elif passenger_loc != None:
@@ -65,10 +69,14 @@ def get_state(pre_obs, obs, stations, passenger_loc, destination_loc, get_passen
 
     # If the destination's location is unknown but visible, determine its position relative to the taxi
     if destination_look and destination_loc == None:
+        count_view = 0
         for pos in possible_positions:
             if pos in stations:
+                count_view += 1
                 destination_loc = pos
                 destination_loc = (destination_loc[0] - taxi_row, destination_loc[1]-taxi_col)
+        if count_view > 1:
+            destination_loc = None
 
     # If the destination's location is known, update it based on the taxi's movement
     elif destination_loc != None:
@@ -80,7 +88,7 @@ def get_state(pre_obs, obs, stations, passenger_loc, destination_loc, get_passen
         relative_stations.append((stations[i][0] - taxi_row, stations[i][1] - taxi_col))
 
     # Construct the state representation
-    state = (passenger_loc, destination_loc, get_passenger, obstacle_north, obstacle_south, obstacle_east, obstacle_west) #, relative_stations[0], relative_stations[1], relative_stations[2], relative_stations[3])
+    state = (passenger_loc, destination_loc, get_passenger, obstacle_north, obstacle_south, obstacle_east, obstacle_west) #, *stations) #, relative_stations[0], relative_stations[1], relative_stations[2], relative_stations[3])
 
     return state
 
@@ -103,12 +111,16 @@ def load_table(file_path):
     return table
 
 
-def train_q_table(env, episodes=10000, alpha=0.2, gamma=0.99):
+def train_q_table(episodes=10000, alpha=0.2, gamma=0.99):
 
     q_table = {}
+    # q_table = load_table('q_table_Q4_size_all_2.pkl')
     rewards_per_episode = []
 
     for episode in range(episodes):
+        size = random.choice([5, 6, 7, 8, 9, 10])
+        env = CostomEnv(size)
+
         obs, _  = env.reset()
         stations = get_stations(obs)
         get_passenger = False
@@ -158,19 +170,22 @@ def train_q_table(env, episodes=10000, alpha=0.2, gamma=0.99):
             passenger_loc = state[0]
             destination_loc = state[1]
 
+            if step_count > 1000:
+                break
+
         rewards_per_episode.append(total_reward)
 
         if (episode + 1) % 100 == 0:
             avg_reward = np.mean(rewards_per_episode[-100:])
             print(f"Episode {episode + 1}/{episodes}, Avg Reward: {avg_reward:.4f}")
             
-            save_table(q_table, 'q_table_Q4_size5.pkl')
+            save_table(q_table, 'q_table_Q4_size_all_3.pkl')
 
     return rewards_per_episode
 
 if __name__ == "__main__":
-    env = CostomEnv()
-    rewards = train_q_table(env, episodes=100000)
+
+    rewards = train_q_table(episodes=1000000)
 
     plt.plot(rewards)
     plt.xlabel("Episodes")

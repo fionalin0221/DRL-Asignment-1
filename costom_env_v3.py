@@ -6,12 +6,12 @@ import time
 import importlib.util
 
 class CostomEnv:
-    def __init__(self, size=8):
+    def __init__(self, size=10):
         super(CostomEnv, self).__init__()
         self.size = size
 
         # Number of obstacles in the environment
-        self.num_obstacles = 6
+        self.num_obstacles = size*size // 10
         
         # Define the action space: 6 discrete actions (Move in 4 directions + Pickup + Dropoff)
         self.action_space = spaces.Discrete(6)  # South, North, East, West, Pick Up, Drop Off 
@@ -101,13 +101,13 @@ class CostomEnv:
         elif action == 3 :  # Move West
             next_col -= 1
 
+        reward = 0
         if action in [0, 1, 2, 3]: # Check movement validity
             if (not (0 <= next_row < self.size and 0 <= next_col < self.size)) or ((next_row, next_col) in self.obstacles):
                 if self.current_steps >= self.max_steps:
                     return self.get_state(), -15, True, False, {}
                 return self.get_state(), -5, False, False, {}
             else:
-                reward = -0.1 # Small penalty for each move
                 self.agent_pos = (next_row, next_col)
 
         elif action == 4: # Pickup passenger
@@ -124,6 +124,8 @@ class CostomEnv:
             else:
                 self.passenger_picked_up = False
                 reward = -10 # Invalid drop-off attempt
+        
+        reward -= 0.1 # Small penalty for each action
 
         if self.passenger_picked_up:
             self.passenger_loc = (next_row, next_col)
@@ -175,20 +177,22 @@ def run_agent(agent_file):
     student_agent = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(student_agent)
 
-    env = CostomEnv()
+    size = random.choice([5, 6, 7, 8, 9, 10])
+    env = CostomEnv(size)
+
     obs, _ = env.reset()
     total_reward = 0
     done = False
     step_count = 0
 
-    env.render_env()
+    # env.render_env()
 
     while not done:
         action = student_agent.get_action(obs)
         obs, reward, done, _, _ = env.step(action)
         total_reward += reward
         step_count += 1
-        env.render_env()
+        # env.render_env()
 
     print(f"Agent Finished in {step_count} steps, Score: {total_reward}")
     return total_reward

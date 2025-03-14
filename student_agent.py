@@ -5,7 +5,7 @@ import random
 import gym
 import time
 
-with open('q_table_Q4_size5.pkl', 'rb') as file:
+with open('q_table_Q4_size_all_3.pkl', 'rb') as file:
     q_table = pickle.load(file)
 
 def softmax(x, T):
@@ -17,7 +17,7 @@ def get_state(obs):
 
     stations = np.zeros((4, 2))
     # Unpack relevant features from the current observation
-    taxi_row, taxi_col, stations[0][0], stations[0][1] ,stations[1][0],stations[1][1],stations[2][0],stations[2][1],stations[3][0],stations[3][1], obstacle_north, obstacle_south, obstacle_east, obstacle_west, passenger_look, destination_look = obs
+    taxi_row, taxi_col, stations[0][0],stations[0][1],stations[1][0],stations[1][1],stations[2][0],stations[2][1],stations[3][0],stations[3][1], obstacle_north, obstacle_south, obstacle_east, obstacle_west, passenger_look, destination_look = obs
     # Convert stations to tuple format
     stations = [tuple(station) for station in stations]
 
@@ -42,10 +42,14 @@ def get_state(obs):
 
     # If the passenger's location is unknown but visible, determine its position relative to the taxi
     elif passenger_look and get_action.passenger_loc == None:
+        count_view = 0
         for pos in possible_positions:
             if pos in stations:
+                count_view += 1
                 get_action.passenger_loc = pos
                 get_action.passenger_loc = (get_action.passenger_loc[0] - taxi_row, get_action.passenger_loc[1]-taxi_col)
+        if count_view > 1:
+            get_action.passenger_loc = None
     
     # If the passenger's location is known, update it based on the taxi's movement
     elif get_action.passenger_loc != None:
@@ -53,10 +57,14 @@ def get_state(obs):
 
     # If the destination's location is unknown but visible, determine its position relative to the taxi
     if destination_look and get_action.destination_loc == None:
+        count_view = 0
         for pos in possible_positions:
             if pos in stations:
+                count_view += 1
                 get_action.destination_loc = pos
                 get_action.destination_loc = (get_action.destination_loc[0] - taxi_row, get_action.destination_loc[1]-taxi_col)
+        if count_view > 1:
+            get_action.destination_loc = None
     
     # If the destination's location is known, update it based on the taxi's movement
     elif get_action.destination_loc != None:
@@ -103,7 +111,7 @@ def get_action(obs):
         get_action.passenger_loc = None  # Passenger location (relative)
         get_action.destination_loc = None  # Destination location (relative)
         get_action.get_passenger = False  # Whether the passenger is in the taxi
-
+        get_action.env = np.zeros((11, 11))
 
     # Compute the current state representation
     state = get_state(obs)
@@ -133,6 +141,33 @@ def get_action(obs):
     # print(f"Passenger and Destination: {obs[14], obs[15]}")
     # print(obs)
     # print(state, action)
+    # # time.sleep(0.5)
+
+    # taxi_row, taxi_col = obs[0], obs[1]
+    # s1_row, s1_col = obs[2], obs[3]
+    # s2_row, s2_col = obs[4], obs[5]
+    # s3_row, s3_col = obs[6], obs[7]
+    # s4_row, s4_col = obs[8], obs[9]
+
+    # # free-space: 1, obstacle: 2
+    # # station: 3
+
+    # print(taxi_row, taxi_col)
+    # if taxi_row+1<=10:
+    #     get_action.env[taxi_row+1][taxi_col] = obs[11] + 1
+    # if taxi_row-1>=0:
+    #     get_action.env[taxi_row-1][taxi_col] = obs[10] + 1
+    # if taxi_col+1<=10:
+    #     get_action.env[taxi_row][taxi_col+1] = obs[12] + 1
+    # if taxi_col-1>=0:
+    #     get_action.env[taxi_row][taxi_col-1] = obs[13] + 1
+
+    # get_action.env[s1_row][s1_col] = 3
+    # get_action.env[s2_row][s2_col] = 3
+    # get_action.env[s3_row][s3_col] = 3
+    # get_action.env[s4_row][s4_col] = 3
+
+    # print(get_action.env)
     # time.sleep(0.5)
 
     return action
